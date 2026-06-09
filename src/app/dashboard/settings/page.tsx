@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 
 export default function SettingsPage() {
   var [settings, setSettings] = useState({
@@ -9,26 +10,58 @@ export default function SettingsPage() {
     reminder3Days: true,
     reminder7Days: true,
     escalationAlert14Days: true,
-    freelancerName: "Demo Freelancer",
-    freelancerEmail: "demo@collectflow.io",
+    freelancerName: "",
+    freelancerEmail: "",
     reminderTone: "friendly",
     autoMarkOverdue: true,
     reminderTimezone: "America/New_York",
   });
   var [saved, setSaved] = useState(false);
+  var [darkMode, setDarkMode] = useState(false);
+
+  useEffect(function () {
+    var savedDark = localStorage.getItem("collectflow-dark-mode");
+    if (savedDark === "true") setDarkMode(true);
+
+    supabase.auth.getUser().then(function (result) {
+      if (result.data.user) {
+        var name = result.data.user.user_metadata && result.data.user.user_metadata.full_name ? result.data.user.user_metadata.full_name : "";
+        var email = result.data.user.email || "";
+        setSettings(function (prev) {
+          return { freelancerName: name, freelancerEmail: email, emailReminders: prev.emailReminders, smsReminders: prev.smsReminders, reminder3Days: prev.reminder3Days, reminder7Days: prev.reminder7Days, escalationAlert14Days: prev.escalationAlert14Days, reminderTone: prev.reminderTone, autoMarkOverdue: prev.autoMarkOverdue, reminderTimezone: prev.reminderTimezone };
+        });
+      }
+    });
+  }, []);
 
   function handleToggle(key: string) {
     setSettings(function (prev) {
-      return { ...prev, [key]: !prev[key as keyof typeof prev] };
+      var newVal = !prev[key as keyof typeof prev];
+      var updated = Object.assign({}, prev);
+      (updated as any)[key] = newVal;
+      return updated;
     });
     setSaved(false);
   }
 
   function handleTextChange(key: string, value: string) {
     setSettings(function (prev) {
-      return { ...prev, [key]: value };
+      var updated = Object.assign({}, prev);
+      (updated as any)[key] = value;
+      return updated;
     });
     setSaved(false);
+  }
+
+  function toggleDarkMode() {
+    var newMode = !darkMode;
+    setDarkMode(newMode);
+    localStorage.setItem("collectflow-dark-mode", String(newMode));
+    if (newMode) {
+      document.documentElement.setAttribute("data-theme", "dark");
+    } else {
+      document.documentElement.removeAttribute("data-theme");
+    }
   }
 
   function handleSave() {
@@ -36,48 +69,17 @@ export default function SettingsPage() {
     setTimeout(function () { setSaved(false); }, 3000);
   }
 
-  function Toggle({ label, description, value, onChange }: { label: string; description: string; value: boolean; onChange: () => void }) {
-    return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 0", borderBottom: "1px solid #f3f4f6" }}>
-        <div>
-          <div style={{ fontSize: "14px", fontWeight: "500", color: "#111827" }}>{label}</div>
-          <div style={{ fontSize: "13px", color: "#6b7280", marginTop: "2px" }}>{description}</div>
-        </div>
-        <button
-          onClick={onChange}
-          style={{
-            width: "44px",
-            height: "24px",
-            borderRadius: "12px",
-            border: "none",
-            cursor: "pointer",
-            position: "relative",
-            background: value ? "#4f46e5" : "#d1d5db",
-            transition: "background 0.2s",
-            flexShrink: 0,
-          }}
-        >
-          <div style={{
-            width: "20px",
-            height: "20px",
-            borderRadius: "50%",
-            background: "white",
-            position: "absolute",
-            top: "2px",
-            left: value ? "22px" : "2px",
-            transition: "left 0.2s",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-          }} />
-        </button>
-      </div>
-    );
-  }
+  var cardBg = darkMode ? "#1f2937" : "white";
+  var borderColor = darkMode ? "#374151" : "#e5e7eb";
+  var textColor = darkMode ? "#f3f4f6" : "#111827";
+  var secondaryText = darkMode ? "#9ca3af" : "#6b7280";
+  var inputBg = darkMode ? "#374151" : "white";
 
   return (
     <div style={{ padding: "24px 32px", maxWidth: "800px" }}>
       <div style={{ marginBottom: "24px" }}>
-        <h1 style={{ fontSize: "24px", fontWeight: "bold", color: "#111827" }}>Settings</h1>
-        <p style={{ fontSize: "14px", color: "#6b7280", marginTop: "4px" }}>Configure your notification preferences and account settings</p>
+        <h1 style={{ fontSize: "24px", fontWeight: "bold", color: textColor }}>Settings</h1>
+        <p style={{ fontSize: "14px", color: secondaryText, marginTop: "4px" }}>Configure your notification preferences and account settings</p>
       </div>
 
       {saved && (
@@ -86,81 +88,137 @@ export default function SettingsPage() {
         </div>
       )}
 
-      <div style={{ background: "white", borderRadius: "12px", border: "1px solid #e5e7eb", marginBottom: "24px" }}>
-        <div style={{ padding: "20px 24px", borderBottom: "1px solid #e5e7eb" }}>
-          <h2 style={{ fontSize: "16px", fontWeight: "600" }}>Notification Channels</h2>
+      <div style={{ background: cardBg, borderRadius: "12px", border: "1px solid " + borderColor, marginBottom: "24px" }}>
+        <div style={{ padding: "20px 24px", borderBottom: "1px solid " + borderColor }}>
+          <h2 style={{ fontSize: "16px", fontWeight: "600", color: textColor }}>Appearance</h2>
         </div>
-        <div style={{ padding: "8px 24px" }}>
-          <Toggle
-            label="Email Reminders"
-            description="Send reminder emails to clients when invoices are overdue"
-            value={settings.emailReminders}
-            onChange={function () { handleToggle("emailReminders"); }}
-          />
-          <Toggle
-            label="SMS Reminders"
-            description="Send text message reminders to clients via Twilio"
-            value={settings.smsReminders}
-            onChange={function () { handleToggle("smsReminders"); }}
-          />
-        </div>
-      </div>
-
-      <div style={{ background: "white", borderRadius: "12px", border: "1px solid #e5e7eb", marginBottom: "24px" }}>
-        <div style={{ padding: "20px 24px", borderBottom: "1px solid #e5e7eb" }}>
-          <h2 style={{ fontSize: "16px", fontWeight: "600" }}>Escalation Schedule</h2>
-        </div>
-        <div style={{ padding: "8px 24px" }}>
-          <Toggle
-            label="Reminder at 3 Days Overdue"
-            description="Send a friendly reminder email 3 days after the due date"
-            value={settings.reminder3Days}
-            onChange={function () { handleToggle("reminder3Days"); }}
-          />
-          <Toggle
-            label="Reminder at 7 Days Overdue"
-            description="Send a firmer reminder email 7 days after the due date"
-            value={settings.reminder7Days}
-            onChange={function () { handleToggle("reminder7Days"); }}
-          />
-          <Toggle
-            label="Escalation Alert at 14 Days"
-            description="Notify yourself via email when an invoice is 14+ days overdue"
-            value={settings.escalationAlert14Days}
-            onChange={function () { handleToggle("escalationAlert14Days"); }}
-          />
+        <div style={{ padding: "16px 24px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 0" }}>
+            <div>
+              <div style={{ fontSize: "14px", fontWeight: "500", color: textColor }}>Dark Mode</div>
+              <div style={{ fontSize: "13px", color: secondaryText, marginTop: "2px" }}>Switch between light and dark theme</div>
+            </div>
+            <button
+              onClick={toggleDarkMode}
+              style={{
+                width: "44px",
+                height: "24px",
+                borderRadius: "12px",
+                border: "none",
+                cursor: "pointer",
+                position: "relative",
+                background: darkMode ? "#4f46e5" : "#d1d5db",
+                transition: "background 0.2s",
+                flexShrink: 0,
+              }}
+            >
+              <div style={{
+                width: "20px",
+                height: "20px",
+                borderRadius: "50%",
+                background: "white",
+                position: "absolute",
+                top: "2px",
+                left: darkMode ? "22px" : "2px",
+                transition: "left 0.2s",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+              }} />
+            </button>
+          </div>
         </div>
       </div>
 
-      <div style={{ background: "white", borderRadius: "12px", border: "1px solid #e5e7eb", marginBottom: "24px" }}>
-        <div style={{ padding: "20px 24px", borderBottom: "1px solid #e5e7eb" }}>
-          <h2 style={{ fontSize: "16px", fontWeight: "600" }}>Your Information</h2>
+      <div style={{ background: cardBg, borderRadius: "12px", border: "1px solid " + borderColor, marginBottom: "24px" }}>
+        <div style={{ padding: "20px 24px", borderBottom: "1px solid " + borderColor }}>
+          <h2 style={{ fontSize: "16px", fontWeight: "600", color: textColor }}>Notification Channels</h2>
+        </div>
+        <div style={{ padding: "8px 24px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 0", borderBottom: "1px solid " + (darkMode ? "#374151" : "#f3f4f6") }}>
+            <div>
+              <div style={{ fontSize: "14px", fontWeight: "500", color: textColor }}>Email Reminders</div>
+              <div style={{ fontSize: "13px", color: secondaryText, marginTop: "2px" }}>Send reminder emails to clients when invoices are overdue</div>
+            </div>
+            <button onClick={function () { handleToggle("emailReminders"); }} style={{ width: "44px", height: "24px", borderRadius: "12px", border: "none", cursor: "pointer", position: "relative", background: settings.emailReminders ? "#4f46e5" : "#d1d5db", transition: "background 0.2s", flexShrink: 0 }}>
+              <div style={{ width: "20px", height: "20px", borderRadius: "50%", background: "white", position: "absolute", top: "2px", left: settings.emailReminders ? "22px" : "2px", transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }} />
+            </button>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 0" }}>
+            <div>
+              <div style={{ fontSize: "14px", fontWeight: "500", color: textColor }}>SMS Reminders</div>
+              <div style={{ fontSize: "13px", color: secondaryText, marginTop: "2px" }}>Send text message reminders to clients via Twilio</div>
+            </div>
+            <button onClick={function () { handleToggle("smsReminders"); }} style={{ width: "44px", height: "24px", borderRadius: "12px", border: "none", cursor: "pointer", position: "relative", background: settings.smsReminders ? "#4f46e5" : "#d1d5db", transition: "background 0.2s", flexShrink: 0 }}>
+              <div style={{ width: "20px", height: "20px", borderRadius: "50%", background: "white", position: "absolute", top: "2px", left: settings.smsReminders ? "22px" : "2px", transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }} />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ background: cardBg, borderRadius: "12px", border: "1px solid " + borderColor, marginBottom: "24px" }}>
+        <div style={{ padding: "20px 24px", borderBottom: "1px solid " + borderColor }}>
+          <h2 style={{ fontSize: "16px", fontWeight: "600", color: textColor }}>Escalation Schedule</h2>
+        </div>
+        <div style={{ padding: "8px 24px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 0", borderBottom: "1px solid " + (darkMode ? "#374151" : "#f3f4f6") }}>
+            <div>
+              <div style={{ fontSize: "14px", fontWeight: "500", color: textColor }}>Reminder at 3 Days Overdue</div>
+              <div style={{ fontSize: "13px", color: secondaryText, marginTop: "2px" }}>Send a friendly reminder email 3 days after the due date</div>
+            </div>
+            <button onClick={function () { handleToggle("reminder3Days"); }} style={{ width: "44px", height: "24px", borderRadius: "12px", border: "none", cursor: "pointer", position: "relative", background: settings.reminder3Days ? "#4f46e5" : "#d1d5db", transition: "background 0.2s", flexShrink: 0 }}>
+              <div style={{ width: "20px", height: "20px", borderRadius: "50%", background: "white", position: "absolute", top: "2px", left: settings.reminder3Days ? "22px" : "2px", transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }} />
+            </button>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 0", borderBottom: "1px solid " + (darkMode ? "#374151" : "#f3f4f6") }}>
+            <div>
+              <div style={{ fontSize: "14px", fontWeight: "500", color: textColor }}>Reminder at 7 Days Overdue</div>
+              <div style={{ fontSize: "13px", color: secondaryText, marginTop: "2px" }}>Send a firmer reminder email 7 days after the due date</div>
+            </div>
+            <button onClick={function () { handleToggle("reminder7Days"); }} style={{ width: "44px", height: "24px", borderRadius: "12px", border: "none", cursor: "pointer", position: "relative", background: settings.reminder7Days ? "#4f46e5" : "#d1d5db", transition: "background 0.2s", flexShrink: 0 }}>
+              <div style={{ width: "20px", height: "20px", borderRadius: "50%", background: "white", position: "absolute", top: "2px", left: settings.reminder7Days ? "22px" : "2px", transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }} />
+            </button>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 0" }}>
+            <div>
+              <div style={{ fontSize: "14px", fontWeight: "500", color: textColor }}>Escalation Alert at 14 Days</div>
+              <div style={{ fontSize: "13px", color: secondaryText, marginTop: "2px" }}>Notify yourself via email when an invoice is 14+ days overdue</div>
+            </div>
+            <button onClick={function () { handleToggle("escalationAlert14Days"); }} style={{ width: "44px", height: "24px", borderRadius: "12px", border: "none", cursor: "pointer", position: "relative", background: settings.escalationAlert14Days ? "#4f46e5" : "#d1d5db", transition: "background 0.2s", flexShrink: 0 }}>
+              <div style={{ width: "20px", height: "20px", borderRadius: "50%", background: "white", position: "absolute", top: "2px", left: settings.escalationAlert14Days ? "22px" : "2px", transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }} />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ background: cardBg, borderRadius: "12px", border: "1px solid " + borderColor, marginBottom: "24px" }}>
+        <div style={{ padding: "20px 24px", borderBottom: "1px solid " + borderColor }}>
+          <h2 style={{ fontSize: "16px", fontWeight: "600", color: textColor }}>Your Information</h2>
         </div>
         <div style={{ padding: "20px 24px" }}>
           <div style={{ marginBottom: "16px" }}>
-            <label style={{ display: "block", fontSize: "14px", fontWeight: "500", marginBottom: "4px", color: "#374151" }}>Your Name</label>
+            <label style={{ display: "block", fontSize: "14px", fontWeight: "500", marginBottom: "4px", color: textColor }}>Your Name</label>
             <input
               type="text"
               value={settings.freelancerName}
               onChange={function (e) { handleTextChange("freelancerName", e.target.value); }}
-              style={{ width: "100%", border: "1px solid #d1d5db", borderRadius: "8px", padding: "8px 12px", fontSize: "14px" }}
+              style={{ width: "100%", border: "1px solid " + borderColor, borderRadius: "8px", padding: "8px 12px", fontSize: "14px", background: inputBg, color: textColor, boxSizing: "border-box" }}
+              placeholder="Your name"
             />
           </div>
           <div style={{ marginBottom: "16px" }}>
-            <label style={{ display: "block", fontSize: "14px", fontWeight: "500", marginBottom: "4px", color: "#374151" }}>Your Email</label>
+            <label style={{ display: "block", fontSize: "14px", fontWeight: "500", marginBottom: "4px", color: textColor }}>Your Email</label>
             <input
               type="email"
               value={settings.freelancerEmail}
-              onChange={function (e) { handleTextChange("freelancerEmail", e.target.value); }}
-              style={{ width: "100%", border: "1px solid #d1d5db", borderRadius: "8px", padding: "8px 12px", fontSize: "14px" }}
+              readOnly
+              style={{ width: "100%", border: "1px solid " + borderColor, borderRadius: "8px", padding: "8px 12px", fontSize: "14px", background: darkMode ? "#2d3748" : "#f9fafb", color: secondaryText, boxSizing: "border-box", cursor: "not-allowed" }}
             />
           </div>
           <div style={{ marginBottom: "16px" }}>
-            <label style={{ display: "block", fontSize: "14px", fontWeight: "500", marginBottom: "4px", color: "#374151" }}>Reminder Tone</label>
+            <label style={{ display: "block", fontSize: "14px", fontWeight: "500", marginBottom: "4px", color: textColor }}>Reminder Tone</label>
             <select
               value={settings.reminderTone}
               onChange={function (e) { handleTextChange("reminderTone", e.target.value); }}
-              style={{ width: "100%", border: "1px solid #d1d5db", borderRadius: "8px", padding: "8px 12px", fontSize: "14px", background: "white" }}
+              style={{ width: "100%", border: "1px solid " + borderColor, borderRadius: "8px", padding: "8px 12px", fontSize: "14px", background: inputBg, color: textColor, boxSizing: "border-box" }}
             >
               <option value="friendly">Friendly</option>
               <option value="professional">Professional</option>
@@ -168,11 +226,11 @@ export default function SettingsPage() {
             </select>
           </div>
           <div>
-            <label style={{ display: "block", fontSize: "14px", fontWeight: "500", marginBottom: "4px", color: "#374151" }}>Timezone</label>
+            <label style={{ display: "block", fontSize: "14px", fontWeight: "500", marginBottom: "4px", color: textColor }}>Timezone</label>
             <select
               value={settings.reminderTimezone}
               onChange={function (e) { handleTextChange("reminderTimezone", e.target.value); }}
-              style={{ width: "100%", border: "1px solid #d1d5db", borderRadius: "8px", padding: "8px 12px", fontSize: "14px", background: "white" }}
+              style={{ width: "100%", border: "1px solid " + borderColor, borderRadius: "8px", padding: "8px 12px", fontSize: "14px", background: inputBg, color: textColor, boxSizing: "border-box" }}
             >
               <option value="America/New_York">Eastern Time (ET)</option>
               <option value="America/Chicago">Central Time (CT)</option>
@@ -184,17 +242,20 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <div style={{ background: "white", borderRadius: "12px", border: "1px solid #e5e7eb", marginBottom: "24px" }}>
-        <div style={{ padding: "20px 24px", borderBottom: "1px solid #e5e7eb" }}>
-          <h2 style={{ fontSize: "16px", fontWeight: "600" }}>Automation</h2>
+      <div style={{ background: cardBg, borderRadius: "12px", border: "1px solid " + borderColor, marginBottom: "24px" }}>
+        <div style={{ padding: "20px 24px", borderBottom: "1px solid " + borderColor }}>
+          <h2 style={{ fontSize: "16px", fontWeight: "600", color: textColor }}>Automation</h2>
         </div>
         <div style={{ padding: "8px 24px" }}>
-          <Toggle
-            label="Auto-Mark as Overdue"
-            description="Automatically update invoice status to OVERDUE when the due date passes"
-            value={settings.autoMarkOverdue}
-            onChange={function () { handleToggle("autoMarkOverdue"); }}
-          />
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 0" }}>
+            <div>
+              <div style={{ fontSize: "14px", fontWeight: "500", color: textColor }}>Auto-Mark as Overdue</div>
+              <div style={{ fontSize: "13px", color: secondaryText, marginTop: "2px" }}>Automatically update invoice status to OVERDUE when the due date passes</div>
+            </div>
+            <button onClick={function () { handleToggle("autoMarkOverdue"); }} style={{ width: "44px", height: "24px", borderRadius: "12px", border: "none", cursor: "pointer", position: "relative", background: settings.autoMarkOverdue ? "#4f46e5" : "#d1d5db", transition: "background 0.2s", flexShrink: 0 }}>
+              <div style={{ width: "20px", height: "20px", borderRadius: "50%", background: "white", position: "absolute", top: "2px", left: settings.autoMarkOverdue ? "22px" : "2px", transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }} />
+            </button>
+          </div>
         </div>
       </div>
 

@@ -1,9 +1,9 @@
 ﻿"use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-
-var DEMO_USER_ID = "demo-user-id";
+import { usePathname, useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 
 var navItems = [
   { href: "/dashboard", label: "Dashboard", icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" },
@@ -13,15 +13,63 @@ var navItems = [
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   var pathname = usePathname();
+  var router = useRouter();
+  var [userEmail, setUserEmail] = useState("");
+  var [userName, setUserName] = useState("");
+  var [darkMode, setDarkMode] = useState(false);
+  var [loading, setLoading] = useState(true);
+
+  useEffect(function () {
+    var savedDark = localStorage.getItem("collectflow-dark-mode");
+    if (savedDark === "true") {
+      setDarkMode(true);
+      document.documentElement.setAttribute("data-theme", "dark");
+    }
+
+    supabase.auth.getUser().then(function (result) {
+      if (result.data.user) {
+        setUserEmail(result.data.user.email || "");
+        setUserName(result.data.user.user_metadata && result.data.user.user_metadata.full_name ? result.data.user.user_metadata.full_name : "");
+      }
+      setLoading(false);
+    });
+  }, []);
+
+  function toggleDarkMode() {
+    var newMode = !darkMode;
+    setDarkMode(newMode);
+    localStorage.setItem("collectflow-dark-mode", String(newMode));
+    if (newMode) {
+      document.documentElement.setAttribute("data-theme", "dark");
+    } else {
+      document.documentElement.removeAttribute("data-theme");
+    }
+  }
+
+  async function handleSignOut() {
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  }
 
   function isActive(href: string) {
     if (href === "/dashboard") return pathname === "/dashboard";
     return pathname.startsWith(href);
   }
 
+  var displayEmail = userEmail || "user@example.com";
+  var displayName = userName || userEmail.split("@")[0] || "User";
+
+  var bgColor = darkMode ? "#111827" : "#f9fafb";
+  var sidebarBg = darkMode ? "#1a1a2e" : "#1e1b4b";
+  var cardBg = darkMode ? "#1f2937" : "white";
+  var borderColor = darkMode ? "#374151" : "#e5e7eb";
+  var textColor = darkMode ? "#f3f4f6" : "#111827";
+  var secondaryText = darkMode ? "#9ca3af" : "#6b7280";
+
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#f9fafb" }}>
-      <aside style={{ width: "240px", background: "#1e1b4b", color: "white", display: "flex", flexDirection: "column", flexShrink: 0 }}>
+    <div style={{ display: "flex", minHeight: "100vh", background: bgColor }}>
+      <aside style={{ width: "240px", background: sidebarBg, color: "white", display: "flex", flexDirection: "column", flexShrink: 0 }}>
         <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
           <Link href="/dashboard" style={{ textDecoration: "none", color: "white", display: "flex", alignItems: "center", gap: "12px" }}>
             <div style={{ background: "#4f46e5", color: "white", fontWeight: "bold", borderRadius: "8px", padding: "4px 12px", fontSize: "14px" }}>CF</div>
@@ -58,12 +106,67 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             );
           })}
         </nav>
-        <div style={{ padding: "16px 24px", borderTop: "1px solid rgba(255,255,255,0.1)", fontSize: "12px", color: "#a5b4fc" }}>
-          <div style={{ marginBottom: "4px" }}>Demo User</div>
-          <div style={{ color: "#818cf8", fontSize: "11px" }}>{DEMO_USER_ID}</div>
+
+        <div style={{ padding: "12px 16px", borderTop: "1px solid rgba(255,255,255,0.1)" }}>
+          <button
+            onClick={toggleDarkMode}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              padding: "8px 12px",
+              borderRadius: "8px",
+              border: "none",
+              cursor: "pointer",
+              background: "rgba(255,255,255,0.08)",
+              color: "#a5b4fc",
+              fontSize: "13px",
+              width: "100%",
+              marginBottom: "4px",
+            }}
+          >
+            {darkMode ? (
+              <svg style={{ width: "16px", height: "16px" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+            ) : (
+              <svg style={{ width: "16px", height: "16px" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+              </svg>
+            )}
+            {darkMode ? "Light Mode" : "Dark Mode"}
+          </button>
+        </div>
+
+        <div style={{ padding: "16px 24px", borderTop: "1px solid rgba(255,255,255,0.1)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+            <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: "#4f46e5", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px", fontWeight: "600", color: "white", flexShrink: 0 }}>
+              {displayName.charAt(0).toUpperCase()}
+            </div>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{ fontSize: "13px", fontWeight: "500", color: "white", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{displayName}</div>
+              <div style={{ fontSize: "11px", color: "#818cf8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{displayEmail}</div>
+            </div>
+          </div>
+          <button
+            onClick={handleSignOut}
+            style={{
+              width: "100%",
+              padding: "8px 12px",
+              borderRadius: "8px",
+              border: "1px solid rgba(255,255,255,0.15)",
+              cursor: "pointer",
+              background: "transparent",
+              color: "#a5b4fc",
+              fontSize: "13px",
+              textAlign: "left",
+            }}
+          >
+            Sign out
+          </button>
         </div>
       </aside>
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, background: bgColor, color: textColor }}>
         {children}
       </div>
     </div>
