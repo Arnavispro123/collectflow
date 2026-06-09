@@ -7,22 +7,39 @@ body {
   color: #111827;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.2s, color 0.2s;
 }
 
 html[data-theme="dark"] body {
-  background-color: #111827;
-  color: #f3f4f6;
+  background-color: #0f172a;
+  color: #e2e8f0;
 }
 
 html[data-theme="dark"] input,
 html[data-theme="dark"] select,
 html[data-theme="dark"] textarea {
-  background-color: #374151;
-  color: #f3f4f6;
-  border-color: #4b5563;
+  background-color: #1e293b;
+  color: #e2e8f0;
+  border-color: #334155;
 }
 
 html[data-theme="dark"] option {
-  background-color: #374151;
-  color: #f3f4f6;
+  background-color: #1e293b;
+  color: #e2e8f0;
+}
+
+html[data-theme="dark"] table {
+  color: #e2e8f0;
+}
+
+html[data-theme="dark"] thead {
+  background-color: #1e293b;
+}
+
+html[data-theme="dark"] tr {
+  border-color: #334155;
+}
+
+html[data-theme="dark"] th {
+  color: #94a3b8;
 }

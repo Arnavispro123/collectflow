@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { supabase } from "@/lib/supabase";
 
 export default function SignupPage() {
   var [email, setEmail] = useState("");
@@ -27,27 +28,19 @@ export default function SignupPage() {
 
     setLoading(true);
 
-    try {
-      var res = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email, password: password }),
-      });
+    var { error: authError } = await supabase.auth.signUp({
+      email: email,
+      password: password,
+    });
 
-      var data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || "Signup failed");
-        setLoading(false);
-        return;
-      }
-
-      setSuccess(true);
+    if (authError) {
+      setError(authError.message);
       setLoading(false);
-    } catch (err) {
-      setError("Something went wrong. Please try again.");
-      setLoading(false);
+      return;
     }
+
+    setSuccess(true);
+    setLoading(false);
   }
 
   if (success) {
