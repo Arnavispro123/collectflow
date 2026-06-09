@@ -7,22 +7,21 @@ export default function DarkModeToggle() {
 
   useEffect(function () {
     var saved = localStorage.getItem("theme");
-    if (saved === "dark") {
-      document.documentElement.setAttribute("data-theme", "dark");
-      setDark(true);
-    }
+    var isDark = saved === "dark" || document.documentElement.getAttribute("data-theme") === "dark";
+    setDark(isDark);
   }, []);
 
   function toggle() {
-    if (dark) {
-      document.documentElement.removeAttribute("data-theme");
-      localStorage.setItem("theme", "light");
-      setDark(false);
-    } else {
+    var newDark = !dark;
+    setDark(newDark);
+    if (newDark) {
       document.documentElement.setAttribute("data-theme", "dark");
       localStorage.setItem("theme", "dark");
-      setDark(true);
+    } else {
+      document.documentElement.removeAttribute("data-theme");
+      localStorage.setItem("theme", "light");
     }
+    window.dispatchEvent(new Event("themechange"));
   }
 
   return (
@@ -34,22 +33,22 @@ export default function DarkModeToggle() {
         top: "16px",
         right: "16px",
         zIndex: 9999,
-        width: "40px",
-        height: "40px",
+        width: "42px",
+        height: "42px",
         borderRadius: "50%",
-        border: "1px solid #e5e7eb",
+        border: dark ? "1px solid #475569" : "1px solid #e5e7eb",
         background: dark ? "#1e293b" : "white",
         color: dark ? "#fbbf24" : "#6b7280",
         cursor: "pointer",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-        fontSize: "18px",
+        boxShadow: dark ? "0 1px 3px rgba(0,0,0,0.3)" : "0 1px 3px rgba(0,0,0,0.1)",
+        fontSize: "20px",
         transition: "all 0.2s",
       }}
     >
-      {dark ? "\u2600" : "\u263E"}
+      {dark ? "\u2600\uFE0F" : "\uD83C\uDF19"}
     </button>
   );
 }

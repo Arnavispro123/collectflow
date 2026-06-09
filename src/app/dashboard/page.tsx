@@ -20,8 +20,11 @@ export default function DashboardPage() {
   var [darkMode, setDarkMode] = useState(false);
 
   useEffect(function () {
-    var savedDark = localStorage.getItem("collectflow-dark-mode");
-    if (savedDark === "true") setDarkMode(true);
+    function readTheme() {
+      setDarkMode(document.documentElement.getAttribute("data-theme") === "dark");
+    }
+    readTheme();
+    window.addEventListener("themechange", readTheme);
 
     supabase.auth.getUser().then(function (result) {
       if (result.data.user) {
@@ -38,6 +41,8 @@ export default function DashboardPage() {
         setLoading(false);
       }
     });
+
+    return function () { window.removeEventListener("themechange", readTheme); };
   }, []);
 
   function handleSubmit(e: React.FormEvent) {

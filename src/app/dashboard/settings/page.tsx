@@ -20,8 +20,11 @@ export default function SettingsPage() {
   var [darkMode, setDarkMode] = useState(false);
 
   useEffect(function () {
-    var savedDark = localStorage.getItem("collectflow-dark-mode");
-    if (savedDark === "true") setDarkMode(true);
+    function readTheme() {
+      setDarkMode(document.documentElement.getAttribute("data-theme") === "dark");
+    }
+    readTheme();
+    window.addEventListener("themechange", readTheme);
 
     supabase.auth.getUser().then(function (result) {
       if (result.data.user) {
@@ -32,6 +35,8 @@ export default function SettingsPage() {
         });
       }
     });
+
+    return function () { window.removeEventListener("themechange", readTheme); };
   }, []);
 
   function handleToggle(key: string) {
@@ -56,12 +61,14 @@ export default function SettingsPage() {
   function toggleDarkMode() {
     var newMode = !darkMode;
     setDarkMode(newMode);
-    localStorage.setItem("collectflow-dark-mode", String(newMode));
     if (newMode) {
       document.documentElement.setAttribute("data-theme", "dark");
+      localStorage.setItem("theme", "dark");
     } else {
       document.documentElement.removeAttribute("data-theme");
+      localStorage.setItem("theme", "light");
     }
+    window.dispatchEvent(new Event("themechange"));
   }
 
   function handleSave() {

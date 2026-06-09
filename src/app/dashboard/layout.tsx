@@ -20,11 +20,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   var [loading, setLoading] = useState(true);
 
   useEffect(function () {
-    var savedDark = localStorage.getItem("collectflow-dark-mode");
-    if (savedDark === "true") {
-      setDarkMode(true);
-      document.documentElement.setAttribute("data-theme", "dark");
+    function readTheme() {
+      var isDark = document.documentElement.getAttribute("data-theme") === "dark";
+      setDarkMode(isDark);
     }
+    readTheme();
+    window.addEventListener("themechange", readTheme);
 
     supabase.auth.getUser().then(function (result) {
       if (result.data.user) {
@@ -33,17 +34,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       }
       setLoading(false);
     });
+
+    return function () { window.removeEventListener("themechange", readTheme); };
   }, []);
 
   function toggleDarkMode() {
     var newMode = !darkMode;
-    setDarkMode(newMode);
-    localStorage.setItem("collectflow-dark-mode", String(newMode));
     if (newMode) {
       document.documentElement.setAttribute("data-theme", "dark");
+      localStorage.setItem("theme", "dark");
     } else {
       document.documentElement.removeAttribute("data-theme");
+      localStorage.setItem("theme", "light");
     }
+    setDarkMode(newMode);
+    window.dispatchEvent(new Event("themechange"));
   }
 
   async function handleSignOut() {
@@ -60,16 +65,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   var displayEmail = userEmail || "user@example.com";
   var displayName = userName || userEmail.split("@")[0] || "User";
 
-  var bgColor = darkMode ? "#111827" : "#f9fafb";
-  var sidebarBg = darkMode ? "#1a1a2e" : "#1e1b4b";
-  var cardBg = darkMode ? "#1f2937" : "white";
-  var borderColor = darkMode ? "#374151" : "#e5e7eb";
-  var textColor = darkMode ? "#f3f4f6" : "#111827";
-  var secondaryText = darkMode ? "#9ca3af" : "#6b7280";
+  var bgColor = darkMode ? "#0f172a" : "#f9fafb";
+  var sidebarBg = darkMode ? "#0f172a" : "#1e1b4b";
+  var cardBg = darkMode ? "#1e293b" : "white";
+  var borderColor = darkMode ? "#334155" : "#e5e7eb";
+  var textColor = darkMode ? "#e2e8f0" : "#111827";
+  var secondaryText = darkMode ? "#94a3b8" : "#6b7280";
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: bgColor }}>
-      <aside style={{ width: "240px", background: sidebarBg, color: "white", display: "flex", flexDirection: "column", flexShrink: 0 }}>
+      <aside style={{ width: "240px", background: sidebarBg, color: "white", display: "flex", flexDirection: "column", flexShrink: 0, borderRight: darkMode ? "1px solid #1e293b" : "none" }}>
         <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
           <Link href="/dashboard" style={{ textDecoration: "none", color: "white", display: "flex", alignItems: "center", gap: "12px" }}>
             <div style={{ background: "#4f46e5", color: "white", fontWeight: "bold", borderRadius: "8px", padding: "4px 12px", fontSize: "14px" }}>CF</div>
@@ -125,15 +130,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               marginBottom: "4px",
             }}
           >
-            {darkMode ? (
-              <svg style={{ width: "16px", height: "16px" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-            ) : (
-              <svg style={{ width: "16px", height: "16px" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-              </svg>
-            )}
+            {darkMode ? "\u2600\uFE0F" : "\uD83C\uDF19"}
             {darkMode ? "Light Mode" : "Dark Mode"}
           </button>
         </div>
