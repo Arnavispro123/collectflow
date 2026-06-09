@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  name          String?
+  phone         String?
+  stripeCustomerId String? @unique
+  stripeSubscriptionId String?
+  subscriptionStatus String  @default("FREE")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  invoices      Invoice[]
+  escalations   EscalationLog[]
+  @@map("users")
+}
+
+model Invoice {
+  id            String    @id @default(uuid())
+  userId        String
+  clientName    String
+  clientEmail   String?
+  clientPhone   String?
+  invoiceNumber String
+  amount        Decimal   @db.Decimal(10, 2)
+  currency      String    @default("USD")
+  dueDate       DateTime
+  status        String    @default("UNPAID")
+  description   String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  escalations   EscalationLog[]
+  reminders     ReminderLog[]
+  @@index([userId, status])
+  @@index([dueDate, status])
+  @@map("invoices")
+}
+
+model EscalationLog {
+  id          String   @id @default(uuid())
+  userId      String
+  invoiceId   String
+  level       String
+  sentAt      DateTime @default(now())
+  channel     String
+  status      String   @default("PENDING")
+  errorMessage String?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  @@index([invoiceId, level])
+  @@map("escalation_logs")
+}
+
+model ReminderLog {
+  id          String   @id @default(uuid())
+  invoiceId   String
+  type        String
+  sentAt      DateTime @default(now())
+  channel     String
+  status      String   @default("PENDING")
+  errorMessage String?
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  @@index([invoiceId, type])
+  @@map("reminder_logs")
+}
