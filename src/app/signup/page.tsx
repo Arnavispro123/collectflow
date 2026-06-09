@@ -1,12 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
 
 export default function SignupPage() {
-  var router = useRouter();
   var [email, setEmail] = useState("");
   var [password, setPassword] = useState("");
   var [confirmPassword, setConfirmPassword] = useState("");
@@ -30,22 +27,27 @@ export default function SignupPage() {
 
     setLoading(true);
 
-    var { error: authError } = await supabase.auth.signUp({
-      email: email,
-      password: password,
-      options: {
-        emailRedirectTo: window.location.origin + "/auth/callback",
-      },
-    });
+    try {
+      var res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email, password: password }),
+      });
 
-    if (authError) {
-      setError(authError.message);
+      var data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Signup failed");
+        setLoading(false);
+        return;
+      }
+
+      setSuccess(true);
       setLoading(false);
-      return;
+    } catch (err) {
+      setError("Something went wrong. Please try again.");
+      setLoading(false);
     }
-
-    setSuccess(true);
-    setLoading(false);
   }
 
   if (success) {
@@ -56,9 +58,9 @@ export default function SignupPage() {
             <div style={{ width: "48px", height: "48px", borderRadius: "50%", background: "#dcfce7", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
               <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="#16a34a" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
             </div>
-            <h1 style={{ fontSize: "20px", fontWeight: "600", color: "#111827", marginBottom: "8px" }}>Check your email</h1>
+            <h1 style={{ fontSize: "20px", fontWeight: "600", color: "#111827", marginBottom: "8px" }}>Account created!</h1>
             <p style={{ color: "#6b7280", fontSize: "14px", marginBottom: "24px" }}>
-              We sent a confirmation link to <strong>{email}</strong>. Click the link to activate your account.
+              You can now sign in with your email and password.
             </p>
             <Link href="/login" style={{ display: "inline-block", background: "#4f46e5", color: "white", padding: "10px 24px", borderRadius: "8px", fontWeight: "500", textDecoration: "none", fontSize: "14px" }}>
               Go to Sign In

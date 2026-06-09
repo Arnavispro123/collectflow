@@ -40,15 +40,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && (request.nextUrl.pathname === "/login" || request.nextUrl.pathname === "/signup")) {
-    var url2 = request.nextUrl.clone();
-    url2.pathname = "/dashboard";
-    return NextResponse.redirect(url2);
-  }
-
   return supabaseResponse;
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/login", "/signup", "/api/invoices/:path*", "/api/escalations/:path*"],
+  matcher: ["/dashboard/:path*", "/api/invoices/:path*", "/api/escalations/:path*"],
 };
