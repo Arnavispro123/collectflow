@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
     data: {
       invoiceId: invoice.id,
       channel: "EMAIL",
-      level: daysOverdue > 7 ? "REMINDER_2" : "REMINDER_1",
+      type: daysOverdue > 7 ? "REMINDER_2" : "REMINDER_1",
       status: "SENT",
       sentAt: new Date(),
     },
