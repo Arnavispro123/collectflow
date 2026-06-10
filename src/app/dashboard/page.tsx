@@ -221,6 +221,7 @@ export default function DashboardPage() {
               <tr>
                 <th style={{ padding: "12px 24px", textAlign: "left", fontSize: "12px", fontWeight: "500", color: secondaryText, textTransform: "uppercase" }}>Invoice</th>
                 <th style={{ padding: "12px 24px", textAlign: "left", fontSize: "12px", fontWeight: "500", color: secondaryText, textTransform: "uppercase" }}>Client</th>
+                <th style={{ padding: "12px 24px", textAlign: "left", fontSize: "12px", fontWeight: "500", color: secondaryText, textTransform: "uppercase" }}>Email</th>
                 <th style={{ padding: "12px 24px", textAlign: "left", fontSize: "12px", fontWeight: "500", color: secondaryText, textTransform: "uppercase" }}>Amount</th>
                 <th style={{ padding: "12px 24px", textAlign: "left", fontSize: "12px", fontWeight: "500", color: secondaryText, textTransform: "uppercase" }}>Due Date</th>
                 <th style={{ padding: "12px 24px", textAlign: "left", fontSize: "12px", fontWeight: "500", color: secondaryText, textTransform: "uppercase" }}>Status</th>
@@ -234,6 +235,7 @@ export default function DashboardPage() {
                   <tr key={inv.id} style={{ borderBottom: "1px solid " + borderColor }}>
                     <td style={{ padding: "16px 24px", fontWeight: "500", color: textColor }}>{inv.invoiceNumber}</td>
                     <td style={{ padding: "16px 24px", color: secondaryText }}>{inv.clientName}</td>
+                    <td style={{ padding: "16px 24px", color: secondaryText, fontSize: "13px" }}>{inv.clientEmail || "-"}</td>
                     <td style={{ padding: "16px 24px", fontWeight: "600", color: textColor }}>{formatCurrency(inv.amount)}</td>
                     <td style={{ padding: "16px 24px", color: secondaryText }}>{formatDate(inv.dueDate)}</td>
                     <td style={{ padding: "16px 24px" }}>
