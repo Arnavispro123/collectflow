@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import prisma from "@/lib/prisma";
 
 export async function POST(request: NextRequest) {
   var body = await request.json();
@@ -32,13 +33,31 @@ export async function POST(request: NextRequest) {
     }
   );
 
-  var { error } = await supabase.auth.signInWithPassword({
+  var { data, error } = await supabase.auth.signInWithPassword({
     email: email,
     password: password,
   });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+
+  if (data.user) {
+    try {
+      await prisma.user.upsert({
+        where: { id: data.user.id },
+        update: { email: data.user.email || email },
+        create: {
+          id: data.user.id,
+          email: data.user.email || email,
+          name: data.user.user_metadata && data.user.user_metadata.full_name
+            ? data.user.user_metadata.full_name
+            : null,
+        },
+      });
+    } catch (e) {
+      console.error("Failed to upsert user:", e);
+    }
   }
 
   return response;
