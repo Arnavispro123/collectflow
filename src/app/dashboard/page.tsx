@@ -17,6 +17,8 @@ export default function DashboardPage() {
   var [userId, setUserId] = useState("");
   var [loading, setLoading] = useState(true);
   var [darkMode, setDarkMode] = useState(false);
+  var [sendingId, setSendingId] = useState("");
+  var [sendResult, setSendResult] = useState("");
 
   useEffect(function () {
     function readTheme() {
@@ -84,6 +86,31 @@ export default function DashboardPage() {
     fetch("/api/invoices?id=" + id, { method: "DELETE" }).catch(function () {});
   }
 
+  function sendReminder(invoiceId: string) {
+    setSendingId(invoiceId);
+    setSendResult("");
+    fetch("/api/invoices/send-reminder", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ invoiceId: invoiceId }),
+    })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (data.success) {
+          setSendResult("Email sent successfully!");
+        } else {
+          setSendResult(data.error || "Failed to send");
+        }
+        setSendingId("");
+        setTimeout(function () { setSendResult(""); }, 3000);
+      })
+      .catch(function () {
+        setSendResult("Failed to send email");
+        setSendingId("");
+        setTimeout(function () { setSendResult(""); }, 3000);
+      });
+  }
+
   var totalOutstanding = invoices.filter(function (inv) { return inv.status !== "PAID"; }).reduce(function (sum, inv) { return sum + inv.amount; }, 0);
   var totalCollected = invoices.filter(function (inv) { return inv.status === "PAID"; }).reduce(function (sum, inv) { return sum + inv.amount; }, 0);
   var overdueCount = invoices.filter(function (inv) { return inv.status === "OVERDUE"; }).length;
@@ -105,6 +132,19 @@ export default function DashboardPage() {
 
   return (
     <div style={{ padding: "24px 32px" }}>
+      {sendResult && (
+        <div style={{
+          position: "fixed", top: "20px", right: "20px", zIndex: 9999,
+          background: sendResult === "Email sent successfully!" ? "#dcfce7" : "#fef2f2",
+          border: "1px solid " + (sendResult === "Email sent successfully!" ? "#bbf7d0" : "#fecaca"),
+          borderRadius: "8px", padding: "12px 20px",
+          color: sendResult === "Email sent successfully!" ? "#166534" : "#991b1b",
+          fontSize: "14px", fontWeight: "500",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+        }}>
+          {sendResult}
+        </div>
+      )}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "24px" }}>
         <div>
           <h1 style={{ fontSize: "24px", fontWeight: "bold", color: textColor }}>Dashboard</h1>
@@ -205,6 +245,23 @@ export default function DashboardPage() {
                       {inv.daysOverdue > 0 ? inv.daysOverdue + " days" : "-"}
                     </td>
                     <td style={{ padding: "16px 24px", textAlign: "right" }}>
+                      {inv.status !== "PAID" && inv.clientEmail && (
+                        <button
+                          onClick={function () { sendReminder(inv.id); }}
+                          disabled={sendingId === inv.id}
+                          style={{
+                            color: sendingId === inv.id ? "#9ca3af" : "#059669",
+                            fontWeight: "500",
+                            marginRight: "12px",
+                            background: "none",
+                            border: "none",
+                            cursor: sendingId === inv.id ? "not-allowed" : "pointer",
+                            fontSize: "13px",
+                          }}
+                        >
+                          {sendingId === inv.id ? "Sending..." : "Send Reminder"}
+                        </button>
+                      )}
                       {inv.status !== "PAID" && (
                         <button onClick={function () { markPaid(inv.id); }} style={{ color: "#4f46e5", fontWeight: "500", marginRight: "12px", background: "none", border: "none", cursor: "pointer" }}>Mark Paid</button>
                       )}
