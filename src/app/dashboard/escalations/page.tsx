@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount);
@@ -42,20 +41,22 @@ export default function EscalationsPage() {
     readTheme();
     window.addEventListener("themechange", readTheme);
 
-    supabase.auth.getUser().then(function (result) {
-      if (result.data.user) {
-        var uid = result.data.user.id;
-        fetch("/api/escalations?userId=" + uid)
-          .then(function (res) { return res.json(); })
-          .then(function (data) {
-            if (Array.isArray(data)) setEscalations(data);
-            setLoading(false);
-          })
-          .catch(function () { setLoading(false); });
-      } else {
-        setLoading(false);
-      }
-    });
+    fetch("/api/auth/user")
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (data.id) {
+          fetch("/api/escalations?userId=" + data.id)
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+              if (Array.isArray(data)) setEscalations(data);
+              setLoading(false);
+            })
+            .catch(function () { setLoading(false); });
+        } else {
+          setLoading(false);
+        }
+      })
+      .catch(function () { setLoading(false); });
 
     return function () { window.removeEventListener("themechange", readTheme); };
   }, []);

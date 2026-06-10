@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
 
 export default function LoginPage() {
   var [email, setEmail] = useState("");
@@ -25,18 +24,26 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
 
-    var { error: authError } = await supabase.auth.signInWithPassword({
-      email: email,
-      password: password,
-    });
+    try {
+      var res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email, password: password }),
+      });
 
-    if (authError) {
-      setError(authError.message);
+      var data = await res.json();
+
+      if (!res.ok || data.error) {
+        setError(data.error || "Login failed");
+        setLoading(false);
+        return;
+      }
+
+      window.location.href = "/dashboard";
+    } catch (err) {
+      setError("Something went wrong. Please try again.");
       setLoading(false);
-      return;
     }
-
-    window.location.href = "/dashboard";
   }
 
   var bg = darkMode ? "#0f172a" : "linear-gradient(135deg, #eef2ff 0%, #ffffff 100%)";

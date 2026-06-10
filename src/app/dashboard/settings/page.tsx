@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
 
 export default function SettingsPage() {
   var [settings, setSettings] = useState({
@@ -26,15 +25,18 @@ export default function SettingsPage() {
     readTheme();
     window.addEventListener("themechange", readTheme);
 
-    supabase.auth.getUser().then(function (result) {
-      if (result.data.user) {
-        var name = result.data.user.user_metadata && result.data.user.user_metadata.full_name ? result.data.user.user_metadata.full_name : "";
-        var email = result.data.user.email || "";
-        setSettings(function (prev) {
-          return { freelancerName: name, freelancerEmail: email, emailReminders: prev.emailReminders, smsReminders: prev.smsReminders, reminder3Days: prev.reminder3Days, reminder7Days: prev.reminder7Days, escalationAlert14Days: prev.escalationAlert14Days, reminderTone: prev.reminderTone, autoMarkOverdue: prev.autoMarkOverdue, reminderTimezone: prev.reminderTimezone };
-        });
-      }
-    });
+    fetch("/api/auth/user")
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (data.email) {
+          var name = data.name || "";
+          var email = data.email || "";
+          setSettings(function (prev) {
+            return { freelancerName: name, freelancerEmail: email, emailReminders: prev.emailReminders, smsReminders: prev.smsReminders, reminder3Days: prev.reminder3Days, reminder7Days: prev.reminder7Days, escalationAlert14Days: prev.escalationAlert14Days, reminderTone: prev.reminderTone, autoMarkOverdue: prev.autoMarkOverdue, reminderTimezone: prev.reminderTimezone };
+          });
+        }
+      })
+      .catch(function () {});
 
     return function () { window.removeEventListener("themechange", readTheme); };
   }, []);

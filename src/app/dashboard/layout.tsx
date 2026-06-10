@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
 
 var navItems = [
   { href: "/dashboard", label: "Dashboard", icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" },
@@ -27,13 +26,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     readTheme();
     window.addEventListener("themechange", readTheme);
 
-    supabase.auth.getUser().then(function (result) {
-      if (result.data.user) {
-        setUserEmail(result.data.user.email || "");
-        setUserName(result.data.user.user_metadata && result.data.user.user_metadata.full_name ? result.data.user.user_metadata.full_name : "");
-      }
-      setLoading(false);
-    });
+    fetch("/api/auth/user")
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (data.email) {
+          setUserEmail(data.email);
+          setUserName(data.name || "");
+        }
+        setLoading(false);
+      })
+      .catch(function () { setLoading(false); });
 
     return function () { window.removeEventListener("themechange", readTheme); };
   }, []);
@@ -52,9 +54,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   async function handleSignOut() {
-    await supabase.auth.signOut();
-    router.push("/login");
-    router.refresh();
+    await fetch("/api/auth/logout", { method: "POST" });
+    window.location.href = "/login";
   }
 
   function isActive(href: string) {
