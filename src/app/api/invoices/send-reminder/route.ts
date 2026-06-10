@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
-
-var prisma = null as any;
-try {
-  var PrismaClient = require("@prisma/client").PrismaClient;
-  prisma = new PrismaClient();
-} catch (e) {}
+import prisma from "@/lib/prisma";
 
 var RESEND_API_KEY = process.env.RESEND_API_KEY;
 var EMAIL_FROM = process.env.EMAIL_FROM || "noreply@collectflow.io";
@@ -45,10 +40,6 @@ export async function POST(request: NextRequest) {
   var { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
-
-  if (!prisma) {
-    return NextResponse.json({ error: "Database not configured" }, { status: 500 });
   }
 
   var invoice = await prisma.invoice.findFirst({
