@@ -6,20 +6,21 @@ export async function POST(request: NextRequest) {
   var email = body.email;
   var password = body.password;
 
-  var supabaseResponse = NextResponse.json({ success: true });
+  var response = NextResponse.json({ success: true });
 
   var supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return request.cookies.getAll();
+        get(name: string) {
+          return request.cookies.get(name)?.value;
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(function (cookie) {
-            supabaseResponse.cookies.set(cookie.name, cookie.value, cookie.options);
-          });
+        set(name: string, value: string, options: any) {
+          response.cookies.set(name, value, options);
+        },
+        remove(name: string, options: any) {
+          response.cookies.delete({ name, ...options });
         },
       },
     }
@@ -34,5 +35,5 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  return supabaseResponse;
+  return response;
 }

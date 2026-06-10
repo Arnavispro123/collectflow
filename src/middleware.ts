@@ -9,17 +9,18 @@ export async function middleware(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return request.cookies.getAll();
+        get(name: string) {
+          return request.cookies.get(name)?.value;
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(function (cookie) {
-            request.cookies.set(cookie.name, cookie.value);
-          });
+        set(name: string, value: string, options: any) {
+          request.cookies.set({ name, value, ...options });
           supabaseResponse = NextResponse.next({ request: request });
-          cookiesToSet.forEach(function (cookie) {
-            supabaseResponse.cookies.set(cookie.name, cookie.value, cookie.options);
-          });
+          supabaseResponse.cookies.set(name, value, options);
+        },
+        remove(name: string, options: any) {
+          request.cookies.delete({ name, ...options });
+          supabaseResponse = NextResponse.next({ request: request });
+          supabaseResponse.cookies.delete({ name, ...options });
         },
       },
     }
