@@ -8,6 +8,7 @@ export default function LoginPage() {
   var [password, setPassword] = useState("");
   var [error, setError] = useState("");
   var [loading, setLoading] = useState(false);
+  var [debug, setDebug] = useState("");
   var [darkMode, setDarkMode] = useState(false);
 
   useEffect(function () {
@@ -22,6 +23,7 @@ export default function LoginPage() {
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setDebug("Calling /api/auth/login...");
     setLoading(true);
 
     try {
@@ -32,6 +34,7 @@ export default function LoginPage() {
       });
 
       var data = await res.json();
+      setDebug("Login response: " + JSON.stringify(data));
 
       if (!res.ok || data.error) {
         setError(data.error || "Login failed");
@@ -39,9 +42,20 @@ export default function LoginPage() {
         return;
       }
 
-      window.location.href = "/dashboard";
+      setDebug("Login OK. Checking /api/debug/auth...");
+      var debugRes = await fetch("/api/debug/auth");
+      var debugData = await debugRes.json();
+      setDebug("Debug after login: " + JSON.stringify(debugData));
+
+      if (debugData.hasUser) {
+        setDebug("User found! Redirecting to dashboard...");
+        window.location.href = "/dashboard";
+      } else {
+        setDebug("NO user found after login! Cookies: " + JSON.stringify(debugData.cookieNames));
+        setLoading(false);
+      }
     } catch (err) {
-      setError("Something went wrong. Please try again.");
+      setDebug("Error: " + String(err));
       setLoading(false);
     }
   }
@@ -72,6 +86,12 @@ export default function LoginPage() {
           {error && (
             <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", padding: "12px 16px", marginBottom: "16px", color: "#991b1b", fontSize: "14px" }}>
               {error}
+            </div>
+          )}
+
+          {debug && (
+            <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: "8px", padding: "12px 16px", marginBottom: "16px", color: "#1e40af", fontSize: "12px", fontFamily: "monospace", wordBreak: "break-all" }}>
+              {debug}
             </div>
           )}
 
