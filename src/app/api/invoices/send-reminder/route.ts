@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
-import { createClient } from "@prisma/client/runtime/library";
 
 var prisma = null as any;
 try {
