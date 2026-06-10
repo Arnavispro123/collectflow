@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
   var dueDate = new Date(invoice.dueDate);
   var daysOverdue = Math.max(0, Math.floor((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24)));
 
-  var formattedAmount = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(invoice.amount);
+  var formattedAmount = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Number(invoice.amount));
 
   var subject: string;
   var html: string;
