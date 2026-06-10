@@ -17,10 +17,16 @@ export async function POST(request: NextRequest) {
           return request.cookies.get(name)?.value;
         },
         set(name: string, value: string, options: any) {
-          response.cookies.set(name, value, options);
+          response.cookies.set(name, value, {
+            path: options?.path || "/",
+            maxAge: options?.maxAge || 60 * 60 * 24 * 7,
+            sameSite: options?.sameSite || "lax",
+            httpOnly: options?.httpOnly !== undefined ? options.httpOnly : false,
+            secure: options?.secure !== undefined ? options.secure : false,
+          });
         },
         remove(name: string, options: any) {
-          response.cookies.delete({ name, ...options });
+          response.cookies.delete(name);
         },
       },
     }

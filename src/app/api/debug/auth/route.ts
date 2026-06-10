@@ -3,9 +3,8 @@ import { createServerClient } from "@supabase/ssr";
 
 export async function GET(request: NextRequest) {
   var cookies = request.cookies.getAll();
-
-  var cookieDetails = cookies.map(function (c) {
-    return { name: c.name, valueLength: c.value.length };
+  var details = cookies.map(function (c) {
+    return { name: c.name, len: c.value.length };
   });
 
   var supabase = createServerClient(
@@ -13,9 +12,7 @@ export async function GET(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value;
-        },
+        get(name: string) { return request.cookies.get(name)?.value; },
         set() {},
         remove() {},
       },
@@ -30,6 +27,6 @@ export async function GET(request: NextRequest) {
     userEmail: data.user ? data.user.email : null,
     error: error ? error.message : null,
     cookieCount: cookies.length,
-    cookieDetails: cookieDetails,
+    cookies: details,
   });
 }
