@@ -1,25 +1,40 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
 import prisma from "@/lib/prisma";
+
+async function getUserId(request: NextRequest): Promise<string | null> {
+  var supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) { return request.cookies.get(name)?.value; },
+        set() {},
+        remove() {},
+      },
+    }
+  );
+  var { data: { user } } = await supabase.auth.getUser();
+  return user ? user.id : null;
+}
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get("userId");
-
+    var userId = await getUserId(request);
     if (!userId) {
-      return NextResponse.json({ error: "userId is required" }, { status: 400 });
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    const invoices = await prisma.invoice.findMany({
-      where: { userId },
+    var invoices = await prisma.invoice.findMany({
+      where: { userId: userId },
       orderBy: { dueDate: "desc" },
     });
 
-    const now = new Date();
-    const invoicesWithOverdue = invoices.map((invoice) => {
-      const dueDate = new Date(invoice.dueDate);
-      const diffTime = now.getTime() - dueDate.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    var now = new Date();
+    var invoicesWithOverdue = invoices.map(function (invoice) {
+      var dueDate = new Date(invoice.dueDate);
+      var diffTime = now.getTime() - dueDate.getTime();
+      var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       return {
         ...invoice,
         amount: Number(invoice.amount),
@@ -36,10 +51,15 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const invoice = await prisma.invoice.create({
+    var userId = await getUserId(request);
+    if (!userId) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+
+    var body = await request.json();
+    var invoice = await prisma.invoice.create({
       data: {
-        userId: body.userId || "demo-user-id",
+        userId: userId,
         clientName: body.clientName,
         clientEmail: body.clientEmail || null,
         clientPhone: body.clientPhone || null,
@@ -59,12 +79,17 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { id, ...updateData } = body;
+    var userId = await getUserId(request);
+    if (!userId) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+
+    var body = await request.json();
+    var { id, ...updateData } = body;
     if (!id) {
       return NextResponse.json({ error: "Invoice ID is required" }, { status: 400 });
     }
-    const invoice = await prisma.invoice.update({ where: { id }, data: updateData });
+    var invoice = await prisma.invoice.update({ where: { id }, data: updateData });
     return NextResponse.json(invoice);
   } catch (error) {
     console.error("Error updating invoice:", error);
@@ -74,8 +99,13 @@ export async function PATCH(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get("id");
+    var userId = await getUserId(request);
+    if (!userId) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+
+    var { searchParams } = new URL(request.url);
+    var id = searchParams.get("id");
     if (!id) {
       return NextResponse.json({ error: "Invoice ID is required" }, { status: 400 });
     }

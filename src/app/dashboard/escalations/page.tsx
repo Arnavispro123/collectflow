@@ -41,20 +41,11 @@ export default function EscalationsPage() {
     readTheme();
     window.addEventListener("themechange", readTheme);
 
-    fetch("/api/auth/user")
+    fetch("/api/escalations")
       .then(function (res) { return res.json(); })
       .then(function (data) {
-        if (data.id) {
-          fetch("/api/escalations?userId=" + data.id)
-            .then(function (res) { return res.json(); })
-            .then(function (data) {
-              if (Array.isArray(data)) setEscalations(data);
-              setLoading(false);
-            })
-            .catch(function () { setLoading(false); });
-        } else {
-          setLoading(false);
-        }
+        if (Array.isArray(data)) setEscalations(data);
+        setLoading(false);
       })
       .catch(function () { setLoading(false); });
 

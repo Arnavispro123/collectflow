@@ -32,7 +32,7 @@ export default function DashboardPage() {
       .then(function (data) {
         if (data.id) {
           setUserId(data.id);
-          fetch("/api/invoices?userId=" + data.id)
+          fetch("/api/invoices")
             .then(function (res) { return res.json(); })
             .then(function (data) {
               if (Array.isArray(data)) setInvoices(data);
@@ -67,9 +67,9 @@ export default function DashboardPage() {
     fetch("/api/invoices", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ clientName: form.clientName, clientEmail: form.clientEmail, invoiceNumber: form.invoiceNumber, amount: form.amount, dueDate: form.dueDate, description: form.description, userId: userId }),
+      body: JSON.stringify({ clientName: form.clientName, clientEmail: form.clientEmail, invoiceNumber: form.invoiceNumber, amount: form.amount, dueDate: form.dueDate, description: form.description }),
     }).then(function () {
-      fetch("/api/invoices?userId=" + userId)
+      fetch("/api/invoices")
         .then(function (res) { return res.json(); })
         .then(function (data) { if (Array.isArray(data)) setInvoices(data); })
         .catch(function () {});
